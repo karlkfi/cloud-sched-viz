@@ -1,0 +1,8 @@
+# Mac Finder
+.DS_Store
+
+# IntelliJ
+.idea
+
+# compiled binaries
+/_output
