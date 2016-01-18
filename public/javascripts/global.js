@@ -54,6 +54,13 @@ function addTableRow(appData) {
 	// store app in memory
 	appListData.push(appData)
 
+	var elapsedSeconds = '?'
+	if (testStartTime) {
+		var now = new Date().getTime()
+		var elapsedTime = now - testStartTime
+		elapsedSeconds = Math.round(elapsedTime / 1000)
+	}
+
 	var rowContent = ''
 
 	rowContent += '<tr>'
@@ -61,6 +68,7 @@ function addTableRow(appData) {
 	rowContent += '<td>' + appData.instances.requested + '</td>'
 	rowContent += '<td>' + appData.instances.running + '</td>'
 	rowContent += '<td>' + appData.instances.healthy + '</td>'
+	rowContent += '<td>' + elapsedSeconds + 's</td>'
 	rowContent += '</tr>'
 
 	// update table
@@ -90,11 +98,11 @@ function startTest() {
 	testInterval = setInterval(function() {
 		var appName = testAppName
 		getAppData(appName).then(function(appData) {
+			addTableRow(appData)
 			if (appData.instances.requested == appData.instances.running &&
 				appData.instances.requested == appData.instances.healthy) {
 				stopTest()
 			}
-			addTableRow(appData)
 		}, function(err) {
 			console.error('app get failed (' + appName + '): ' + JSON.stringify(err))
 		})
@@ -104,11 +112,8 @@ function startTest() {
 function stopTest() {
 	clearInterval(testInterval)
 	if (testStartTime) {
-		var testStopTime = new Date().getTime()
-		var testElapsedTime = testStopTime - testStartTime
-		var testElapsedSeconds = Math.round(testElapsedTime / 1000)
-		$('#test h3').text('Status: Complete (' + testElapsedSeconds + 's)')
 		testStartTime = null
+		$('#test h3').text('Status: Complete')
 		var appName = testAppName
 		deleteApp(appName).then(function(appData) {
 			console.log('app deleted (' + appName + ')')

@@ -43,8 +43,8 @@ function newApp(appName, instances) {
 		"healthChecks": [
 			{
 				"protocol": "TCP",
-				"gracePeriodSeconds": 3,
-				"intervalSeconds": 5,
+				"gracePeriodSeconds": 60,
+				"intervalSeconds": 10,
 				"portIndex": 0,
 				"timeoutSeconds": 5,
 				"maxConsecutiveFailures": 3

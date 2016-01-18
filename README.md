@@ -2,6 +2,8 @@
 
 Web app for visualizing the scheduling of app instances over time.
 
+![75 nginx instances](./docs/cloud-sched-viz-75.png)
+
 
 ## Dependencies
 
