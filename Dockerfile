@@ -10,5 +10,5 @@ ADD . .
 EXPOSE 8080
 
 # bash + trap allows ^C interruption during 'docker run -it'
-ENTRYPOINT ["/bin/bash", "-c"]
-CMD ["trap 'echo Interrupt Signal Received' INT; ./bin/www"]
+ENTRYPOINT ["/bin/bash", "-c", "trap 'echo Interrupt Signal Received' INT; $@", "--"]
+CMD ["bin/www"]

@@ -1,0 +1,57 @@
+kind: List
+metadata: {}
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: ReplicationController
+  metadata:
+    name: cloud-sched-viz
+    labels:
+      app: cloud-sched-viz
+  spec:
+    replicas: 1
+    selector:
+      app: cloud-sched-viz
+    template:
+      metadata:
+        labels:
+          app: cloud-sched-viz
+      spec:
+        containers:
+        - name: www
+          image: karlkfi/cloud-sched-viz:latest
+          imagePullPolicy: Always
+          command:
+          - "bin/www"
+          - "--api-type=kubernetes"
+          - "--api-host=${KUBERNETES_SERVICE_HOST}"
+          - "--api-port=${KUBERNETES_SERVICE_PORT}"
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 15
+            timeoutSeconds: 1
+          ports:
+          - name: http
+            containerPort: 8080
+            hostPort: 80
+          resources:
+            limits:
+              cpu: 0.25
+          env:
+          - name: INSTANCE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: cloud-sched-viz
+    labels:
+      app: cloud-sched-viz
+  spec:
+    selector:
+      app: cloud-sched-viz
+    ports:
+    - port: 80
+      targetPort: http

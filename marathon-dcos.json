@@ -1,0 +1,32 @@
+{
+  "id": "cloud-sched-viz",
+  "container": {
+    "type": "DOCKER",
+    "docker": {
+      "image": "karlkfi/cloud-sched-viz:latest",
+      "forcePullImage": true,
+      "network": "BRIDGE",
+      "portMappings": [
+        {
+          "hostPort": 80,
+          "containerPort": 8080,
+          "protocol": "tcp"
+        }
+      ]
+    }
+  },
+  "cmd": "bin/www --api-type=marathon --api-host=marathon.mesos --api-port=8080",
+  "healthChecks": [{
+    "protocol": "HTTP",
+    "portIndex": 0,
+    "path": "/ready",
+    "gracePeriodSeconds": 30,
+    "intervalSeconds": 15,
+    "timeoutSeconds": 5,
+    "maxConsecutiveFailures": 2
+  }],
+  "acceptedResourceRoles": ["slave_public"],
+  "instances": 1,
+  "cpus": 0.25,
+  "mem": 128.0
+}

@@ -15,9 +15,13 @@ build: build-builder
 	docker run -v "$(CURDIR):/src" $(ORG)/$(REPO)-builder:latest
 	docker build -t $(ORG)/$(REPO):latest .
 
+.PHONY: push
+push:
+	docker push $(ORG)/$(REPO):latest
+
 .PHONY: run
 run:
-	docker run --rm -it -p $(PORT):$(PORT) $(ORG)/$(REPO):latest
+	docker run --rm -it -e NODE_ENV=development -p $(PORT):$(PORT) $(ORG)/$(REPO):latest bin/www --api-type=marathon --api-host=172.17.0.4 --api-port=8080
 
 .PHONY: start
 start:

@@ -1,51 +1,49 @@
-const HttpError = require('../errors/http');
+const HttpError = require('../errors/http')
 const express = require('express')
 var router = express.Router()
 
-/*
- * GET app list.
- */
+// GET app list
 router.get('/', function(req, res) {
-	var db = req.db
-	res.json(db.table('apps'))
+	var cluster = req.cluster
+	cluster.apps().then(function(appsData) {
+		res.json(appsData)
+	}, function(err) {
+		res.sendError(new HttpError(err, err.statusCode || 500, 'failed to retrieve apps'))
+	})
 })
 
-/*
- * GET app.
- */
+// GET app data
 router.get('/:id', function(req, res) {
-	var db = req.db
-	var appId = req.params.id
-	var appData = db.selectOne('apps', 'name', appId)
-	if (appData === null) {
-		throw new HttpError('app not found: ' + appId, 404)
-	}
-	res.json(appData)
+	var cluster = req.cluster
+	var appName = req.params.id
+	cluster.app(appName).then(function(appData) {
+		res.json(appData)
+	}, function(err) {
+		res.sendError(new HttpError(err, err.statusCode || 500, 'failed to retrieve app "%s"', appName))
+	})
 })
 
-/*
- * POST to adduser.
- */
-//router.post('/adduser', function(req, res) {
-//	var db = req.db
-//	var collection = db.get('userlist')
-//	collection.insert(req.body, function(err, result){
-//		res.send(
-//			(err === null) ? { msg: '' } : { msg: err }
-//		)
-//	})
-//})
+// PUT new app
+router.put('/:id', function(req, res) {
+	var cluster = req.cluster
+	var appName = req.params.id
+	var instances = req.body.instances
+	cluster.createApp(appName, instances).then(function(appData) {
+		res.json(appData)
+	}, function(err) {
+		res.sendError(new HttpError(err, err.statusCode || 500, 'failed to create app "%s"', appName))
+	})
+})
 
-/*
- * DELETE to deleteuser.
- */
-//router.delete('/deleteuser/:id', function(req, res) {
-//	var db = req.db
-//	var collection = db.get('userlist')
-//	var userToDelete = req.params.id
-//	collection.remove({ '_id' : userToDelete }, function(err) {
-//		res.send((err === null) ? { msg: '' } : { msg:'error: ' + err })
-//	})
-//})
+// DELETE app
+router.delete('/:id', function(req, res) {
+	var cluster = req.cluster
+	var appName = req.params.id
+	cluster.deleteApp(appName).then(function(appData) {
+		res.json(appData)
+	}, function(err) {
+		res.sendError(new HttpError(err, err.statusCode || 500, 'failed to delete app "%s"', appName))
+	})
+})
 
 module.exports = router

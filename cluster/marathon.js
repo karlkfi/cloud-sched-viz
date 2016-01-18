@@ -3,19 +3,18 @@ const VError = require('verror')
 const HttpError = require('../errors/http')
 const util = require('util')
 
-//TODO: Kubernetes support
-function Kubernetes(host, port) {
+function Marathon(host, port) {
     this.host = host;
     this.port = port;
 }
 
-function toApp(kubernetesApp) {
+function toApp(marathonApp) {
 	return {
-		"name": kubernetesApp.id,
+		"name": marathonApp.id,
 		"instances": {
-			"requested": kubernetesApp.instances,
-			"running": kubernetesApp.tasksRunning,
-			"healthy": kubernetesApp.tasksHealthy
+			"requested": marathonApp.instances,
+			"running": marathonApp.tasksRunning,
+			"healthy": marathonApp.tasksHealthy
 		}
 	}
 }
@@ -55,18 +54,18 @@ function newApp(appName, instances) {
 }
 
 // get details about all apps
-Kubernetes.prototype.apps = function() {
+Marathon.prototype.apps = function() {
 	var url = util.format('http://%s:%s/v2/apps?embed=apps.counts', this.host, this.port)
-	console.log(util.format('kubernetes apps request: %s', url))
+	console.log(util.format('marathon apps request: %s', url))
 	return new Promise(function(resolve, reject) {
 		request.get(url, function (err, res, body) {
 			if (err) {
-				reject(new VError(err, 'kubernetes apps request error'))
+				reject(new VError(err, 'marathon apps request error'))
 				return
 			}
 			if (res.statusCode < 200 || res.statusCode >= 400) {
-				console.error('kubernetes apps request failed: %j', res)
-				reject(new HttpError(res.statusCode, 'kubernetes apps request failed') )
+				console.error('marathon apps request failed: %j', res)
+				reject(new HttpError(res.statusCode, 'marathon apps request failed') )
 				return
 			}
 
@@ -82,23 +81,23 @@ Kubernetes.prototype.apps = function() {
 
 // get details about an app
 // returns Promise
-Kubernetes.prototype.app = function(appName) {
+Marathon.prototype.app = function(appName) {
 	var url = util.format('http://%s:%s/v2/apps/%s?embed=apps.counts', this.host, this.port, appName)
-	console.log(util.format('kubernetes app request: %s', url))
+	console.log(util.format('marathon app request: %s', url))
 	return new Promise(function(resolve, reject) {
 		request.get(url, function (err, res, body) {
 			if (err) {
-				reject(new VError(err, 'kubernetes app request error'))
+				reject(new VError(err, 'marathon app request error'))
 				return
 			}
 			if (res.statusCode == 404) {
-				console.error('kubernetes app request failed: %j', res)
-				reject(new HttpError(res.statusCode, 'kubernetes app does not exist'))
+				console.error('marathon app request failed: %j', res)
+				reject(new HttpError(res.statusCode, 'marathon app does not exist'))
 				return
 			}
 			if (res.statusCode < 200 || res.statusCode >= 400) {
-				console.error('kubernetes app request failed: %j', res)
-				reject(new HttpError(res.statusCode, 'kubernetes app request failed') )
+				console.error('marathon app request failed: %j', res)
+				reject(new HttpError(res.statusCode, 'marathon app request failed') )
 				return
 			}
 			var mApp = JSON.parse(body).app
@@ -110,10 +109,10 @@ Kubernetes.prototype.app = function(appName) {
 
 // create app
 // returns Promise
-Kubernetes.prototype.createApp = function(appName, instances) {
+Marathon.prototype.createApp = function(appName, instances) {
 	instances = instances || 1
 	var url = util.format('http://%s:%s/v2/apps/%s?embed=apps.counts', this.host, this.port, appName)
-	console.log(util.format('kubernetes app create: %s', url))
+	console.log(util.format('marathon app create: %s', url))
 	return new Promise(function(resolve, reject) {
 		request({
 			url: url,
@@ -121,12 +120,12 @@ Kubernetes.prototype.createApp = function(appName, instances) {
 			json: newApp(appName, instances)
 		}, function (err, res, body) {
 			if (err) {
-				reject(new VError(err, 'kubernetes app create error'))
+				reject(new VError(err, 'marathon app create error'))
 				return
 			}
 			if (res.statusCode < 200 || res.statusCode >= 400) {
-				console.error('kubernetes app create failed: %j', res)
-				reject(new HttpError(res.statusCode, 'kubernetes app create failed') )
+				console.error('marathon app create failed: %j', res)
+				reject(new HttpError(res.statusCode, 'marathon app create failed') )
 				return
 			}
 			resolve(body)
@@ -136,21 +135,21 @@ Kubernetes.prototype.createApp = function(appName, instances) {
 
 // delete app
 // returns Promise
-Kubernetes.prototype.deleteApp = function(appName) {
+Marathon.prototype.deleteApp = function(appName) {
 	var url = util.format('http://%s:%s/v2/apps/%s?embed=apps.counts', this.host, this.port, appName)
-	console.log(util.format('kubernetes app delete: %s', url))
+	console.log(util.format('marathon app delete: %s', url))
 	return new Promise(function(resolve, reject) {
 		request({
 			url: url,
 			method: 'DELETE',
 		}, function (err, res, body) {
 			if (err) {
-				reject(new VError(err, 'kubernetes app delete error'))
+				reject(new VError(err, 'marathon app delete error'))
 				return
 			}
 			if (res.statusCode < 200 || res.statusCode >= 400) {
-				console.error('kubernetes app delete failed: %j', res)
-				reject(new HttpError(res.statusCode, 'kubernetes app delete failed') )
+				console.error('marathon app delete failed: %j', res)
+				reject(new HttpError(res.statusCode, 'marathon app delete failed') )
 				return
 			}
 			resolve(body)
@@ -158,4 +157,4 @@ Kubernetes.prototype.deleteApp = function(appName) {
 	})
 }
 
-module.exports = Kubernetes
+module.exports = Marathon
