@@ -4,9 +4,10 @@ const HttpError = require('../errors/http')
 const util = require('util')
 
 //TODO: Kubernetes support
-function Kubernetes(host, port) {
-    this.host = host;
-    this.port = port;
+function Kubernetes(host, port, pathPrefix) {
+    this.host = host
+    this.port = port
+    this.pathPrefix = pathPrefix
 }
 
 function toApp(kubernetesApp) {
@@ -44,7 +45,7 @@ function newApp(appName, instances) {
 		"healthChecks": [
 			{
 				"protocol": "TCP",
-				"gracePeriodSeconds": 3,
+				"gracePeriodSeconds": 5,
 				"intervalSeconds": 5,
 				"portIndex": 0,
 				"timeoutSeconds": 5,

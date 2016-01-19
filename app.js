@@ -17,6 +17,7 @@ var cluster = new ClusterClientBuilder().
 	type(argv['api-type']).
 	host(argv['api-host']).
 	port(argv['api-port']).
+	pathPrefix(argv['api-path-prefix']).
 	build()
 
 // view engine setup
@@ -42,8 +43,16 @@ app.use(function(req, res, next){
 
 // prod: no stack trace
 var sendError = function(res, err) {
+	var statusCode = err.statusCode || 500
+	console.error(
+		'Error handling request (%s):\nstatusCode: %d\nmessage: "%s"\nstack: "%s"',
+		err.name,
+		statusCode,
+		err.message,
+		err.stack
+	)
 	err.stack = null
-	res.status(err.statusCode || 500)
+	res.status(statusCode)
 	res.render('error', {
 		message: err.message,
 		error: err
@@ -53,12 +62,20 @@ var sendError = function(res, err) {
 // dev: print stack trace
 if (app.get('env') === 'development') {
 	sendError = function(res, err) {
-    	res.status(err.statusCode || 500)
-    	res.render('error', {
-    		message: err.message,
-    		error: err
-    	})
-    }
+		var statusCode = err.statusCode || 500
+		console.error(
+			'Error handling request (%s):\nstatusCode: %d\nmessage: %s\nstack: %s',
+			err.name,
+			statusCode,
+			err.message,
+			err.stack
+		)
+		res.status(statusCode)
+		res.render('error', {
+			message: err.message,
+			error: err
+		})
+	}
 }
 
 // add async error handler to router response

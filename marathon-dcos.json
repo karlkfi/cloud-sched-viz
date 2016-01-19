@@ -28,5 +28,6 @@
   "acceptedResourceRoles": ["slave_public"],
   "instances": 1,
   "cpus": 0.25,
-  "mem": 128.0
+  "mem": 128.0,
+  "requirePorts": true
 }

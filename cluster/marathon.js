@@ -3,9 +3,13 @@ const VError = require('verror')
 const HttpError = require('../errors/http')
 const util = require('util')
 
-function Marathon(host, port) {
-    this.host = host;
-    this.port = port;
+function Marathon(host, port, pathPrefix) {
+	this.url = util.format(
+		'http://%s%s%s/v2',
+		host,
+		port ? ':' + port : '',
+		pathPrefix || ''
+	)
 }
 
 function toApp(marathonApp) {
@@ -55,7 +59,7 @@ function newApp(appName, instances) {
 
 // get details about all apps
 Marathon.prototype.apps = function() {
-	var url = util.format('http://%s:%s/v2/apps?embed=apps.counts', this.host, this.port)
+	var url = util.format('%s/apps?embed=apps.counts', this.url)
 	console.log(util.format('marathon apps request: %s', url))
 	return new Promise(function(resolve, reject) {
 		request.get(url, function (err, res, body) {
@@ -82,7 +86,7 @@ Marathon.prototype.apps = function() {
 // get details about an app
 // returns Promise
 Marathon.prototype.app = function(appName) {
-	var url = util.format('http://%s:%s/v2/apps/%s?embed=apps.counts', this.host, this.port, appName)
+	var url = util.format('%s/apps/%s?embed=apps.counts', this.url, appName)
 	console.log(util.format('marathon app request: %s', url))
 	return new Promise(function(resolve, reject) {
 		request.get(url, function (err, res, body) {
@@ -111,7 +115,7 @@ Marathon.prototype.app = function(appName) {
 // returns Promise
 Marathon.prototype.createApp = function(appName, instances) {
 	instances = instances || 1
-	var url = util.format('http://%s:%s/v2/apps/%s?embed=apps.counts', this.host, this.port, appName)
+	var url = util.format('%s/apps/%s?embed=apps.counts', this.url, appName)
 	console.log(util.format('marathon app create: %s', url))
 	return new Promise(function(resolve, reject) {
 		request({
@@ -136,7 +140,7 @@ Marathon.prototype.createApp = function(appName, instances) {
 // delete app
 // returns Promise
 Marathon.prototype.deleteApp = function(appName) {
-	var url = util.format('http://%s:%s/v2/apps/%s?embed=apps.counts', this.host, this.port, appName)
+	var url = util.format('%s/apps/%s?embed=apps.counts', this.url, appName)
 	console.log(util.format('marathon app delete: %s', url))
 	return new Promise(function(resolve, reject) {
 		request({

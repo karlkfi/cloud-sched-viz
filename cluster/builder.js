@@ -15,6 +15,11 @@ ClientBuilder.prototype.port = function(port) {
 	return this
 }
 
+ClientBuilder.prototype.pathPrefix = function(pathPrefix) {
+	this.pathPrefix = pathPrefix
+	return this
+}
+
 ClientBuilder.prototype.build = function() {
 	if (this.type === null) {
 		throw new Error('unspecified cluster api type')
@@ -30,11 +35,11 @@ ClientBuilder.prototype.build = function() {
 	switch (this.type) {
 	case 'kubernetes':
 		var Kubernetes = require('./kubernetes')
-		client = new Kubernetes(this.host, this.port)
+		client = new Kubernetes(this.host, this.port, this.pathPrefix)
 		break
 	case 'marathon':
 		var Marathon = require('./marathon')
-		client = new Marathon(this.host, this.port)
+		client = new Marathon(this.host, this.port, this.pathPrefix)
 		break
 	default:
 		throw new Error('unknown cluster type: ' + this.type)
