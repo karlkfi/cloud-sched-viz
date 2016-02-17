@@ -40,7 +40,7 @@ Exposes the web-ui on port 8080 of localhost (or your docker-machine IP).
 Run in [Marathon](https://mesosphere.github.io/marathon/) on [DCOS](https://mesosphere.com/product/):
 
 ```
-curl -H 'Content-Type: application/json' -X POST -d @"marathon-dcos.json" ${MARATHON_URL}/v2/apps
+dcos marathon add marathon-dcos.json
 ```
 
 Run in [Marathon](https://mesosphere.github.io/marathon/) on [mesos-compose-dind](https://github.com/karlkfi/mesos-compose-dind):
