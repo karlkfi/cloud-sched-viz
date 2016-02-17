@@ -48,10 +48,10 @@ function newApp(appName, instances) {
 			{
 				"protocol": "TCP",
 				"gracePeriodSeconds": 60,
-				"intervalSeconds": 10,
+				"intervalSeconds": 1,
 				"portIndex": 0,
-				"timeoutSeconds": 5,
-				"maxConsecutiveFailures": 3
+				"timeoutSeconds": 1,
+				"maxConsecutiveFailures": 30
 			}
 		]
 	}
