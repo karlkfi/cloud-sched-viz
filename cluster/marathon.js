@@ -42,8 +42,8 @@ function newApp(appName, instances) {
 			}
 		},
 		"instances": instances,
-		"cpus": 0.1,
-		"mem": 16,
+		"cpus": 0.01,
+		"mem": 8,
 		"healthChecks": [
 			{
 				"protocol": "TCP",
