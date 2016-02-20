@@ -2,7 +2,7 @@
 
 Web app for visualizing the scheduling of app instances over time.
 
-![75 nginx instances](./docs/cloud-sched-viz-75.png)
+![200 nginx instances on 2 nodes](./docs/csv-200x2.png)
 
 
 ## Dependencies
@@ -67,11 +67,6 @@ Start the test with the 'Start Test' button.
 Stop the test with the 'Stop Test' button.
 
 See the progress over time in the table.
-
-
-## Future
-
-- Graph visualization
 
 
 ## License

@@ -1,26 +1,32 @@
 extends layout
 
 block content
-	h1= title
-	p Welcome to our test
+	#header
 
-	#wrapper
+		#title
+			h1= title
 
-		#test
-			h2 Test
+		#controls
 			h3 Status: Not Running
 			fieldset
 				input(type="text", name="instances", value="10")
 				button#btnStartTest Start Test
 				button#btnStopTest Stop Test
 
-		#appList
-			h2 App Stats
-			table
-				thead
-					th Name
-					th Requested
-					th Running
-					th Healthy
-					th Elapsed
-				tbody
+		.clear
+
+	#left
+		canvas(id="chart-prime", width="600", height="200")
+		#chartPrimeLegend(class="legend")
+		table(id="spreadsheet")
+			thead
+				th Name
+				th Requested
+				th Running
+				th Ready
+				th Elapsed
+			tbody
+
+	#right
+		canvas(id="chart", width="600", height="400")
+		#chartLegend(class="legend")

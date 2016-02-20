@@ -11,45 +11,74 @@ a {
 	color: #00B7FF;
 }
 
-#wrapper {
+#header {
 	position:relative;
 }
 
-#test {
-	float:left;
-	width:250px;
+#title {
+	float: left;
 }
-	#test p {
+
+#controls {
+	float: right;
+}
+	#controls p {
 		padding:15px;
 		border:1px solid #CCC;
 		background:rgba(80,120,255,0.05);
 	}
 
-#appList {
-	float:left;
-	margin:0 0 30px 0;
+.clear {
+	clear: both;
 }
-	#appList table {
-		border-collapse:separate;
-		border-spacing:1px;
-		background:#CCC;
+
+.legend {
+	position: absolute;
+	top: 5px;
+	left: 5px;
+}
+
+#left {
+	float: left;
+	position: relative;
+	margin-top: 30px;
+}
+	#left canvas {
+		display: block;
 	}
-		#appList table th {
-			background:#EEE;
-			font-weight:600;
-			padding:10px 20px;
+
+#right {
+	float: left;
+	position: relative;
+	margin-left: 30px;
+	margin-top: 30px;
+}
+	#right canvas {
+		display: block;
+	}
+
+#spreadsheet {
+	margin: 10px auto 0 auto;
+	border-collapse:separate;
+	border-spacing:1px;
+	background:#CCC;
+}
+	#spreadsheet th {
+		background:#EEE;
+		font-weight:600;
+		padding:10px 20px;
+		text-align:center;
+	}
+	#spreadsheet tbody {
+		padding:0; margin:0;
+		border-collapse:collapse;
+		border-spacing:0px;
+	}
+		#spreadsheet td {
+			background:#FFF;
+			padding:5px 10px;
 			text-align:center;
 		}
-		#appList table tbody {
-			padding:0; margin:0;
-			border-collapse:collapse;
-			border-spacing:0px;
-		}
-			#appList table td {
-				background:#FFF;
-				padding:5px 10px;
-				text-align:center;
-			}
 
 fieldset {
 	border:0;

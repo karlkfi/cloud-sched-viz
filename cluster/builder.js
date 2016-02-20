@@ -27,9 +27,6 @@ ClientBuilder.prototype.build = function() {
 	if (this.host === null) {
 		throw new Error('unspecified cluster api host')
 	}
-	if (this.port === null) {
-		throw new Error('unspecified cluster api port')
-	}
 
 	var client = null
 	switch (this.type) {

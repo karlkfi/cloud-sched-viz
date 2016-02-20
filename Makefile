@@ -3,7 +3,7 @@ REPO=$(shell git rev-parse --show-toplevel | xargs basename)
 REPO_PATH=github.com/$(ORG)/$(REPO)
 PORT=8080
 
-ARGS=--api-type=marathon --api-host=172.17.0.4 --api-port=8080
+ARGS=--api-type=marathon --api-host=192.168.65.90 --api-path-prefix=/marathon
 
 .PHONY: all
 all: build

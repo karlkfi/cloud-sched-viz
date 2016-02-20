@@ -12,8 +12,20 @@ var testAppInstances = 10
 // start time of test
 var testStartTime = null
 
+// line chart
+var chart;
+var chartPrime;
+
 // DOM Ready =============================================================
 $(document).ready(function() {
+
+	Chart.defaults.global.animationSteps = 24
+
+	chart = initChart()
+	$('#chartLegend').html(chart.generateLegend())
+
+	chartPrime = initChartPrime()
+	$('#chartPrimeLegend').html(chartPrime.generateLegend())
 
 	// Start Test button click
 	$('#btnStartTest').on('click', startTest)
@@ -72,27 +84,55 @@ function addTableRow(appData) {
 	rowContent += '</tr>'
 
 	// update table
-	$(rowContent).prependTo('#appList table tbody')
+	$(rowContent).prependTo('#spreadsheet tbody')
+
+	// chart shows the actual counts
+	chart.addData(
+		[
+			appData.instances.requested,
+			appData.instances.running,
+			appData.instances.healthy
+		],
+		elapsedSeconds +  's'
+	)
+
+	// chartPrime shows the rate of change
+
+	var prevRunning = 0
+	var prevHealthy = 0
+	if (appListData.length > 1) {
+		var prevAppData = appListData[appListData.length - 2]
+		prevRunning = prevAppData.instances.running
+		prevHealthy = prevAppData.instances.healthy
+	}
+
+	chartPrime.addData(
+		[
+			appData.instances.running - prevRunning,
+			appData.instances.healthy - prevHealthy
+		],
+		elapsedSeconds +  's'
+	)
 }
 
 function getInstances() {
-	var instances = $('#test input[name="instances"]').val()
+	var instances = $('#controls input[name="instances"]').val()
 	return instances.length > 0 ? parseInt(instances, 10) : testAppInstances
 }
 
 function startTest() {
 	stopTest()
-	$('#test h3').text('Status: Creating')
+	$('#controls h3').text('Status: Creating')
 	testStartTime = new Date().getTime()
 	var appName = testAppName
 	createApp(appName, getInstances()).then(function(appData) {
 		console.log('app created (' + appName + ')')
-		$('#test h3').text('Status: Deploying')
+		$('#controls h3').text('Status: Deploying')
 	}, function(err) {
 		console.error('app create failed (' + appName + '): ' + JSON.stringify(err))
 		clearInterval(testInterval)
 		testStartTime = null
-		$('#test h3').text('Status: Failed')
+		$('#controls h3').text('Status: Failed')
 	})
 
 	testInterval = setInterval(function() {
@@ -113,7 +153,7 @@ function stopTest() {
 	clearInterval(testInterval)
 	if (testStartTime) {
 		testStartTime = null
-		$('#test h3').text('Status: Complete')
+		$('#controls h3').text('Status: Complete')
 		var appName = testAppName
 		deleteApp(appName).then(function(appData) {
 			console.log('app deleted (' + appName + ')')
@@ -121,6 +161,85 @@ function stopTest() {
 			console.error('app delete failed (' + appName + '): ' + JSON.stringify(err))
 		})
 	} else {
-		$('#test h3').text('Status: Not Running')
+		$('#controls h3').text('Status: Not Running')
 	}
+}
+
+// Charts =============================================================
+
+function initChart() {
+	var chartData = {
+		labels: ["0s"],
+		datasets: [
+			{
+				label: "Requested",
+				fillColor: "rgba(220,220,220,0.2)",
+				strokeColor: "rgba(220,220,220,1)",
+				pointColor: "rgba(220,220,220,1)",
+				pointStrokeColor: "#fff",
+				pointHighlightFill: "#fff",
+				pointHighlightStroke: "rgba(220,220,220,1)",
+				data: [0],
+				bezierCurve: false
+			},
+			{
+				label: "Running",
+				fillColor: "rgba(151,187,205,0.2)",
+				strokeColor: "rgba(151,187,205,1)",
+				pointColor: "rgba(151,187,205,1)",
+				pointStrokeColor: "#fff",
+				pointHighlightFill: "#fff",
+				pointHighlightStroke: "rgba(151,187,205,1)",
+				data: [0]
+			},
+			{
+				label: "Ready",
+				fillColor: "rgba(99,153,180,0.2)",
+				strokeColor: "rgba(99,153,180,1)",
+				pointColor: "rgba(99,153,180,1)",
+				pointStrokeColor: "#fff",
+				pointHighlightFill: "#fff",
+				pointHighlightStroke: "rgba(99,153,180,1)",
+				data: [0]
+			}
+		]
+	}
+	var chartOptions = {
+		legendTemplate: "<ul class=\"<%=name.toLowerCase()%>-legend\"><% for (var i=0; i<datasets.length; i++){%><li style=\"background-color:<%=datasets[i].strokeColor%>\"><%if(datasets[i].label){%><%=datasets[i].label%><%}%></li><%}%></ul>"
+	}
+	var chartCtx = $("#chart").get(0).getContext("2d")
+	return new Chart(chartCtx).Line(chartData, chartOptions)
+}
+
+function initChartPrime() {
+	var chartData = {
+		labels: ["0s"],
+		datasets: [
+			{
+				label: "Newly Running",
+				fillColor: "rgba(151,187,205,0.2)",
+				strokeColor: "rgba(151,187,205,1)",
+				pointColor: "rgba(151,187,205,1)",
+				pointStrokeColor: "#fff",
+				pointHighlightFill: "#fff",
+				pointHighlightStroke: "rgba(151,187,205,1)",
+				data: [0]
+			},
+			{
+				label: "Newly Ready",
+				fillColor: "rgba(99,153,180,0.2)",
+				strokeColor: "rgba(99,153,180,1)",
+				pointColor: "rgba(99,153,180,1)",
+				pointStrokeColor: "#fff",
+				pointHighlightFill: "#fff",
+				pointHighlightStroke: "rgba(99,153,180,1)",
+				data: [0]
+			}
+		]
+	}
+	var chartOptions = {
+		legendTemplate: "<ul class=\"<%=name.toLowerCase()%>-legend\"><% for (var i=0; i<datasets.length; i++){%><li style=\"background-color:<%=datasets[i].strokeColor%>\"><%if(datasets[i].label){%><%=datasets[i].label%><%}%></li><%}%></ul>"
+	}
+	var chartCtx = $("#chart-prime").get(0).getContext("2d")
+	return new Chart(chartCtx).Line(chartData, chartOptions)
 }
