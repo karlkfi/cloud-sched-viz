@@ -2,8 +2,8 @@ kind: List
 metadata: {}
 apiVersion: v1
 items:
-- apiVersion: v1
-  kind: ReplicationController
+- apiVersion: apps/v1
+  kind: Deployment
   metadata:
     name: cloud-sched-viz
     labels:
@@ -11,7 +11,8 @@ items:
   spec:
     replicas: 1
     selector:
-      app: cloud-sched-viz
+      matchLabels:
+        app: cloud-sched-viz
     template:
       metadata:
         labels:
