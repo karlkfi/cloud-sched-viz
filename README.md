@@ -54,9 +54,20 @@ curl -H 'Content-Type: application/json' -X POST -d @"marathon-local.json" ${MAR
 Run in [Kubernetes](http://kubernetes.io/):
 
 ```
-kubectl create -f kubernetes.yaml
+kubectl create -n default -f kubernetes.yaml
 ```
 
+Port Forward to expose the service:
+
+```
+kubectl port-forward -n default service/cloud-sched-viz 8080:80
+```
+
+Delete the resources:
+
+```
+kubectl delete -n default -f kubernetes.yaml
+```
 
 ## Usage
 

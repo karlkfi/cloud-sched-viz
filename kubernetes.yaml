@@ -2,6 +2,35 @@ kind: List
 metadata: {}
 apiVersion: v1
 items:
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    name: cloud-sched-viz
+    namespace: default
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    name: cloud-sched-viz
+    namespace: default
+  rules:
+  - apiGroups:
+    - apps
+    resources:
+    - deployments
+    verbs:
+    - '*'
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    name: cloud-sched-viz
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: cloud-sched-viz
+  subjects:
+  - kind: ServiceAccount
+    name: cloud-sched-viz
+    namespace: default
 - apiVersion: apps/v1
   kind: Deployment
   metadata:
@@ -18,6 +47,7 @@ items:
         labels:
           app: cloud-sched-viz
       spec:
+        serviceAccountName: cloud-sched-viz
         containers:
         - name: www
           image: karlkfi/cloud-sched-viz:latest
@@ -25,25 +55,19 @@ items:
           command:
           - "bin/www"
           - "--api-type=kubernetes"
-          - "--api-host=${KUBERNETES_SERVICE_HOST}"
-          - "--api-port=${KUBERNETES_SERVICE_PORT}"
-          livenessProbe:
-            tcpSocket:
-              port: http
-            initialDelaySeconds: 15
-            timeoutSeconds: 1
+          - "--api-host=kubernetes.default.svc.cluster.local"
+          - "--api-port=443"
+          - "--api-token-file=/var/run/secrets/kubernetes.io/serviceaccount/token"
           ports:
           - name: http
             containerPort: 8080
-            hostPort: 80
           resources:
             limits:
-              cpu: 0.25
+              cpu: 1
+              memory: "64M"
           env:
-          - name: INSTANCE_NAME
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.name
+          - name: NODE_ENV
+            value: development
 - apiVersion: v1
   kind: Service
   metadata:

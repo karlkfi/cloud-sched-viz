@@ -18,7 +18,8 @@ var cluster = new ClusterClientBuilder().
 	host(argv['api-host']).
 	port(argv['api-port']).
 	pathPrefix(argv['api-path-prefix']).
-	bearerToken(process.env.API_BEARER_TOKEN).
+	bearerToken(argv['api-token']).
+	bearerTokenFile(argv['api-token-file']).
 	build()
 
 // view engine setup

@@ -1,3 +1,5 @@
+const fs = require('fs')
+
 function ClientBuilder() {}
 
 ClientBuilder.prototype.type = function(type) {
@@ -25,6 +27,11 @@ ClientBuilder.prototype.bearerToken = function(bearerToken) {
 	return this
 }
 
+ClientBuilder.prototype.bearerTokenFile = function(bearerTokenFile) {
+	this.bearerTokenFile = bearerTokenFile
+	return this
+}
+
 ClientBuilder.prototype.build = function() {
 	if (this.type === null) {
 		throw new Error('unspecified cluster api type')
@@ -37,7 +44,10 @@ ClientBuilder.prototype.build = function() {
 	switch (this.type) {
 	case 'kubernetes':
 		var Kubernetes = require('./kubernetes')
-		client = new Kubernetes(this.host, this.port, this.pathPrefix, this.bearerToken)
+		if (this.bearerTokenFile !== undefined) {
+			this.bearerToken = fs.readFileSync(this.bearerTokenFile, 'utf8');
+		}
+		client = new Kubernetes(this.host, this.port, this.bearerToken)
 		break
 	case 'marathon':
 		var Marathon = require('./marathon')
