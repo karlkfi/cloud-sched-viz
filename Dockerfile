@@ -1,9 +1,15 @@
-FROM mhart/alpine-node:base-5.4.1
+FROM mhart/alpine-node:10.15.3 as builder
+
+COPY . /src/
+WORKDIR /src
+RUN ["npm", "install"]
+
+FROM mhart/alpine-node:base-10.15.3
 
 RUN apk add --update bash && rm -rf /var/cache/apk/*
 
 WORKDIR /app
-ADD . .
+COPY --from=builder /src/ .
 #ADD ["node_modules/", "./node_modules"]
 #ADD ["index.js", "package.json", "LICENSE", "./"]
 

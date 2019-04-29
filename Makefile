@@ -3,18 +3,22 @@ REPO=$(shell git rev-parse --show-toplevel | xargs basename)
 REPO_PATH=github.com/$(ORG)/$(REPO)
 PORT=8080
 
-ARGS=--api-type=marathon --api-host=192.168.65.90 --api-path-prefix=/marathon
+#ARGS=--api-type=marathon --api-host=192.168.65.90 --api-path-prefix=/marathon
+
+# Lookup the IP of the Docker For Mac Kubernetes API Server
+KUBE_API_HOST=$(shell kubectl get pod -n kube-system kube-apiserver-docker-for-desktop -o jsonpath="{.status.podIP}")
+ARGS=--api-type=kubernetes --api-host=$(KUBE_API_HOST) --api-port=6443
+
+# Lookup the name of the default namespace secret
+SECRET_NAME=$(shell kubectl get secrets -o jsonpath="{.items[?(@.metadata.annotations['kubernetes\.io/service-account\.name']=='default')].metadata.name}")
+# Lookup the default namespace secret token
+API_TOKEN=$(shell kubectl get secrets "$(SECRET_NAME)" -o jsonpath="{.data.token}" | base64 --decode)
 
 .PHONY: all
 all: build
 
-.PHONY: build-builder
-build-builder:
-	cd build && docker build -t $(ORG)/$(REPO)-builder:latest .
-
 .PHONY: build
-build: build-builder
-	docker run -v "$(CURDIR):/src" $(ORG)/$(REPO)-builder:latest
+build:
 	docker build -t $(ORG)/$(REPO):latest .
 
 .PHONY: push
@@ -23,7 +27,7 @@ push:
 
 .PHONY: run
 run:
-	docker run --rm -it -e NODE_ENV=development -p $(PORT):$(PORT) $(ORG)/$(REPO):latest bin/www $(ARGS)
+	docker run --rm -it -e NODE_ENV=development -e "API_BEARER_TOKEN=$(API_TOKEN)" -p $(PORT):$(PORT) $(ORG)/$(REPO):latest bin/www $(ARGS)
 
 .PHONY: start
 start:

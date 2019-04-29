@@ -2,161 +2,208 @@ const request = require('request')
 const VError = require('verror')
 const HttpError = require('../errors/http')
 const util = require('util')
+const k8s = require('@kubernetes/client-node')
 
-//TODO: Kubernetes support
-function Kubernetes(host, port, pathPrefix) {
-    this.host = host
-    this.port = port
-    this.pathPrefix = pathPrefix
+function Kubernetes(host, port, pathPrefix, bearerToken) {
+    var server = util.format(
+			'https://%s%s',
+			host,
+			port ? ':' + port : ''
+    )
+
+    var kubeconfig = new k8s.KubeConfig();
+    kubeconfig.loadFromClusterAndUser(
+      { server: server, skipTLSVerify: true, },
+      { token: bearerToken, },
+    )
+    kubeconfig.applyToRequest({
+      "requestCert": false,
+      "rejectUnauthorized": false,
+    });
+
+    //this.k8sApi = kubeconfig.makeApiClient(k8s.Core_v1Api);
+    this.k8sApi = kubeconfig.makeApiClient(k8s.Apps_v1Api);
 }
 
-function toApp(kubernetesApp) {
-	return {
-		"name": kubernetesApp.id,
-		"instances": {
-			"requested": kubernetesApp.instances,
-			"running": kubernetesApp.tasksRunning,
-			"healthy": kubernetesApp.tasksHealthy
-		}
-	}
+function toApp(deployment) {
+  return {
+    "name": deployment.metadata.name,
+    "instances": {
+      "requested": deployment.spec.replicas,
+      "running": deployment.status.updatedReplicas || 0,
+      "healthy": deployment.status.readyReplicas || 0,
+    },
+  }
 }
 
-
-function newApp(appName, instances) {
+function newDeployment(appName, instances) {
 	return {
-		"id": appName,
-		"container": {
-			"type": "DOCKER",
-			"docker": {
-				"image": "nginx:1.9.4",
-				"network": "BRIDGE",
-				"portMappings": [
-					{
-						"containerPort": 80,
-						"hostPort": 0,
-						"protocol": "tcp"
-					}
-				]
-			}
-		},
-		"instances": instances,
-		"cpus": 0.1,
-		"mem": 16,
-		"healthChecks": [
-			{
-				"protocol": "TCP",
-				"gracePeriodSeconds": 5,
-				"intervalSeconds": 5,
-				"portIndex": 0,
-				"timeoutSeconds": 5,
-				"maxConsecutiveFailures": 3
-			}
-		]
+    "kind": "Deployment",
+    "metadata": {
+      "name": appName,
+    },
+    "spec": {
+      "replicas": instances,
+      "selector": {
+        "matchLabels": {
+          "deployment": appName,
+        },
+      },
+      "template": {
+        "metadata": {
+          "labels": {
+            "deployment": appName,
+          },
+        },
+        "spec": {
+          "containers": [
+            {
+              "name": "nginx",
+              "image": "nginx:1.9.4",
+              "ports": [
+                {
+                  "name": "http",
+                  "containerPort": 80,
+                  "hostPort": 0,
+                }
+              ],
+              "resources": {
+                "limits": {
+                  "cpu": 0.1,
+                  "memory": "16M",
+                },
+              },
+              "livenessProbe": {
+                "tcpSocket": {
+                  "port": "http",
+                },
+                "initialDelaySeconds": 5,
+                "timeoutSeconds": 5,
+              },
+            },
+          ],
+        },
+      },
+    },
 	}
 }
 
 // get details about all apps
 Kubernetes.prototype.apps = function() {
-	var url = util.format('http://%s:%s/v2/apps?embed=apps.counts', this.host, this.port)
-	console.log(util.format('kubernetes apps request: %s', url))
-	return new Promise(function(resolve, reject) {
-		request.get(url, function (err, res, body) {
-			if (err) {
-				reject(new VError(err, 'kubernetes apps request error'))
-				return
-			}
-			if (res.statusCode < 200 || res.statusCode >= 400) {
-				console.error('kubernetes apps request failed: %j', res)
-				reject(new HttpError(res.statusCode, 'kubernetes apps request failed') )
-				return
-			}
-
-			var mApps = JSON.parse(body).apps
-			var apps = []
-			for (var i in mApps) {
-				apps.push(toApp(mApps[i]))
-			}
-			resolve(apps)
-		})
-	})
+	var namespace = "default"
+  var k8sApi = this.k8sApi
+  return new Promise(function(resolve, reject) {
+    k8sApi.listNamespacedDeployment(namespace).then(
+      (result) => {
+        if (result.response.statusCode < 200 || result.response.statusCode >= 400) {
+  				console.error('kubernetes apps request failed: %j', result.response)
+  				reject(new HttpError(result.response.statusCode, 'kubernetes apps request failed') )
+  				return
+  			}
+        var mApps = result.body.items
+  			var apps = []
+  			for (var i in mApps) {
+  				apps.push(toApp(mApps[i]))
+  			}
+  			resolve(apps)
+      },
+      (err) => {
+        console.error('kubernetes apps request failed: %j', err)
+        reject(new VError(err, 'kubernetes apps request error'))
+      },
+    )
+  })
 }
 
 // get details about an app
 // returns Promise
 Kubernetes.prototype.app = function(appName) {
-	var url = util.format('http://%s:%s/v2/apps/%s?embed=apps.counts', this.host, this.port, appName)
-	console.log(util.format('kubernetes app request: %s', url))
-	return new Promise(function(resolve, reject) {
-		request.get(url, function (err, res, body) {
-			if (err) {
-				reject(new VError(err, 'kubernetes app request error'))
-				return
-			}
-			if (res.statusCode == 404) {
-				console.error('kubernetes app request failed: %j', res)
-				reject(new HttpError(res.statusCode, 'kubernetes app does not exist'))
-				return
-			}
-			if (res.statusCode < 200 || res.statusCode >= 400) {
-				console.error('kubernetes app request failed: %j', res)
-				reject(new HttpError(res.statusCode, 'kubernetes app request failed') )
-				return
-			}
-			var mApp = JSON.parse(body).app
-			var app = toApp(mApp)
-			resolve(app)
-		})
-	})
+  var namespace = "default"
+  var k8sApi = this.k8sApi
+  return new Promise(function(resolve, reject) {
+    k8sApi.readNamespacedDeployment(appName, namespace).then(
+      (result) => {
+        if (result.response.statusCode == 404) {
+  				console.error('kubernetes app request failed: %j', res)
+  				reject(new HttpError(res.statusCode, 'kubernetes app does not exist'))
+  				return
+  			}
+  			if (result.response.statusCode < 200 || result.response.statusCode >= 400) {
+  				console.error('kubernetes app request failed: %j', res)
+  				reject(new HttpError(res.statusCode, 'kubernetes app request failed') )
+  				return
+  			}
+        var mApp = result.body
+  			var app = toApp(mApp)
+  			resolve(app)
+      },
+      (err) => {
+        console.error('kubernetes app request failed: %j', err)
+        reject(new VError(err, 'kubernetes app request error'))
+      },
+    )
+  })
 }
 
 // create app
 // returns Promise
 Kubernetes.prototype.createApp = function(appName, instances) {
 	instances = instances || 1
-	var url = util.format('http://%s:%s/v2/apps/%s?embed=apps.counts', this.host, this.port, appName)
-	console.log(util.format('kubernetes app create: %s', url))
-	return new Promise(function(resolve, reject) {
-		request({
-			url: url,
-			method: 'PUT',
-			json: newApp(appName, instances)
-		}, function (err, res, body) {
-			if (err) {
-				reject(new VError(err, 'kubernetes app create error'))
-				return
-			}
-			if (res.statusCode < 200 || res.statusCode >= 400) {
-				console.error('kubernetes app create failed: %j', res)
-				reject(new HttpError(res.statusCode, 'kubernetes app create failed') )
-				return
-			}
-			resolve(body)
-		})
-	})
+
+  var namespace = "default"
+  var k8sApi = this.k8sApi
+  return new Promise(function(resolve, reject) {
+    k8sApi.createNamespacedDeployment(namespace, newDeployment(appName, instances)).then(
+      (result) => {
+  			if (result.response.statusCode < 200 || result.response.statusCode >= 400) {
+  				console.error('kubernetes app create failed: %j', res)
+  				reject(new HttpError(res.statusCode, 'kubernetes app create failed') )
+  				return
+  			}
+        var mApp = result.body
+  			var app = toApp(mApp)
+  			resolve(app)
+      },
+      (err) => {
+        console.error('kubernetes app create failed: %j', err)
+        reject(new VError(err, 'kubernetes app create error'))
+      },
+    )
+  })
 }
 
 // delete app
 // returns Promise
 Kubernetes.prototype.deleteApp = function(appName) {
-	var url = util.format('http://%s:%s/v2/apps/%s?embed=apps.counts', this.host, this.port, appName)
-	console.log(util.format('kubernetes app delete: %s', url))
-	return new Promise(function(resolve, reject) {
-		request({
-			url: url,
-			method: 'DELETE',
-		}, function (err, res, body) {
-			if (err) {
-				reject(new VError(err, 'kubernetes app delete error'))
-				return
-			}
-			if (res.statusCode < 200 || res.statusCode >= 400) {
-				console.error('kubernetes app delete failed: %j', res)
-				reject(new HttpError(res.statusCode, 'kubernetes app delete failed') )
-				return
-			}
-			resolve(body)
-		})
-	})
+  var namespace = "default"
+  var k8sApi = this.k8sApi
+  return new Promise(function(resolve, reject) {
+    k8sApi.deleteNamespacedDeployment(appName, namespace).then(
+      (result) => {
+  			if (result.response.statusCode < 200 || result.response.statusCode >= 400) {
+  				console.error('kubernetes app delete failed: %j', res)
+  				reject(new HttpError(res.statusCode, 'kubernetes app delete failed') )
+  				return
+  			}
+        if (result.body.status != "Success") {
+          console.error('kubernetes app delete failed: %j', result.body)
+          reject(new VError(err, 'kubernetes app delete error'))
+        }
+  			resolve({
+          "name": appName,
+          "instances": {
+            "requested": 0,
+            "running": 0,
+            "healthy": 0,
+          },
+        })
+      },
+      (err) => {
+        console.error('kubernetes app delete failed: %j', err)
+        reject(new VError(err, 'kubernetes app delete error'))
+      },
+    )
+  })
 }
 
 module.exports = Kubernetes

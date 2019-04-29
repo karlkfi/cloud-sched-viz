@@ -20,6 +20,11 @@ ClientBuilder.prototype.pathPrefix = function(pathPrefix) {
 	return this
 }
 
+ClientBuilder.prototype.bearerToken = function(bearerToken) {
+	this.bearerToken = bearerToken
+	return this
+}
+
 ClientBuilder.prototype.build = function() {
 	if (this.type === null) {
 		throw new Error('unspecified cluster api type')
@@ -32,7 +37,7 @@ ClientBuilder.prototype.build = function() {
 	switch (this.type) {
 	case 'kubernetes':
 		var Kubernetes = require('./kubernetes')
-		client = new Kubernetes(this.host, this.port, this.pathPrefix)
+		client = new Kubernetes(this.host, this.port, this.pathPrefix, this.bearerToken)
 		break
 	case 'marathon':
 		var Marathon = require('./marathon')

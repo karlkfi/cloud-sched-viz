@@ -18,11 +18,12 @@ var cluster = new ClusterClientBuilder().
 	host(argv['api-host']).
 	port(argv['api-port']).
 	pathPrefix(argv['api-path-prefix']).
+	bearerToken(process.env.API_BEARER_TOKEN).
 	build()
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'))
-app.set('view engine', 'jade')
+app.set('view engine', 'pug')
 
 // TODO: favicon
 //app.use(favicon(__dirname + '/public/favicon.ico'))
